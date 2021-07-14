@@ -1,7 +1,6 @@
 /**
  * @file bst.hpp
  * @author your name (goldroger.1993@outlook.com)
- * @brief 
  * @version 0.1
  * @date 2021-07-7 (date started)
  */
@@ -94,20 +93,20 @@ public:
 //
   /**
    * @brief checks if the tree is empty
-   * @return true 
-   * @return false 
+   * @return true
+   * @return false
    */
   [[nodiscard]]
-  constexpr 
-  auto is_empty() const 
-      -> bool 
-  { 
+  constexpr
+  auto is_empty() const
+      -> bool
+  {
     return m_root == nullptr;
   }
 
   /**
    * @brief exactly!!
-   * @return std::size_t 
+   * @return std::size_t
    */
   [[nodiscard]]
   constexpr
@@ -118,7 +117,7 @@ public:
 
   /**
    * @brief insert an element to BST
-   * @param val 
+   * @param val
    */
   constexpr
   auto insert(Ty &&val)
@@ -142,7 +141,7 @@ public:
 
   /**
    * @brief insert an element to BST
-   * @param val 
+   * @param val
    */
   constexpr
   auto insert(const Ty &val)
@@ -172,7 +171,7 @@ public:
    * @param order `3` for post-order
    */
   constexpr
-  auto print(const int order) const 
+  auto print(const int order) const
       -> void
   {
     if ( is_empty() ) {
@@ -205,9 +204,9 @@ public:
 
   /**
    * @brief find if certain element exits int BST
-   * @param val 
-   * @return true 
-   * @return false 
+   * @param val
+   * @return true
+   * @return false
    */
   [[nodiscard]]
   constexpr
@@ -236,9 +235,9 @@ public:
 
   /**
    * @brief find if certain element exits int BST
-   * @param val 
-   * @return true 
-   * @return false 
+   * @param val
+   * @return true
+   * @return false
    */
   [[nodiscard]]
   constexpr
@@ -320,7 +319,8 @@ public:
    * @param val to be removes
    */
   constexpr
-  auto remove(Ty &&val) -> void
+  auto remove(Ty &&val)
+	  -> void
   {
     if ( is_empty() ) {
       empty_tree();
@@ -351,8 +351,9 @@ public:
     remove_hidden(std::move(val), m_root);
   }
 
-constexpr
-  auto remove(const Ty &val) -> void
+  constexpr
+  auto remove(const Ty &val)
+	  -> void
   {
     if ( is_empty() ) {
       empty_tree();
@@ -375,7 +376,7 @@ constexpr
         remove_hidden(root->m_data, root->m_right);
       } else {
         sh_ptr old_node = root;
-        root = (root->m_left != nullptr) 
+        root = (root->m_left != nullptr)
                         ?  root->m_left : root->m_right;
         old_node.reset();
       }
@@ -390,7 +391,7 @@ constexpr
   {
     if ( is_empty() ) { empty_tree(); return 0ull;}
   //
-    std::function<std::size_t(sh_ptr , Ty, std::size_t)> 
+    std::function<std::size_t(sh_ptr , Ty, std::size_t)>
     depth_hidden
         = [&depth_hidden](sh_ptr &&root, Ty &&node,
                                       std::size_t &&height)
