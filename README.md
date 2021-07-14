@@ -4,7 +4,7 @@
 
 ## Introduction
 
-- Binary-search tree data-structure written in c++ modern`smart-pointers`
+- Binary-search tree data-structure written in c++ modern with `smart-pointers`
 
 ## Requirement
 
