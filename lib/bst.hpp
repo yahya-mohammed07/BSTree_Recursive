@@ -116,7 +116,7 @@ public:
   }
 
   /**
-   * @brief insert an element to BST
+   * @brief insert an element to BSTree
    * @param val
    */
   constexpr
@@ -140,7 +140,7 @@ public:
   }
 
   /**
-   * @brief insert an element to BST
+   * @brief insert an element to BSTree
    * @param val
    */
   constexpr
@@ -203,7 +203,7 @@ public:
   }
 
   /**
-   * @brief find if certain element exits int BST
+   * @brief find if certain element exits int BSTree
    * @param val
    * @return true
    * @return false
@@ -234,7 +234,7 @@ public:
   }
 
   /**
-   * @brief find if certain element exits int BST
+   * @brief find if certain element exits int BSTree
    * @param val
    * @return true
    * @return false
@@ -266,12 +266,12 @@ public:
   }
 
   /**
-   * @brief get maximum element in BST
-   * @return const Ty& 
+   * @brief get maximum element in BSTree
+   * @return const Ty&
    */
   [[nodiscard]]
   constexpr
-  auto max() const 
+  auto max() const
       -> Ty
   {
     if (is_empty()) {
@@ -290,8 +290,8 @@ public:
     return max_hidden(m_root)->m_data;
   }
   /**
-   * @brief get minimum element in BST
-   * @return const Ty& 
+   * @brief get minimum element in BSTree
+   * @return const Ty&
    */
   [[nodiscard]]
   constexpr
@@ -315,7 +315,7 @@ public:
     }
 
   /**
-   * @brief remove a node from the tree
+   * @brief remove a node from the BSTree
    * @param val to be removes
    */
   constexpr
@@ -343,7 +343,7 @@ public:
         remove_hidden(std::move(root->m_data), root->m_right);
       } else {
         sh_ptr old_node = root;
-        root = (root->m_left != nullptr) 
+        root = (root->m_left != nullptr)
                         ?  root->m_left : root->m_right;
         old_node.reset();
       }
@@ -409,9 +409,9 @@ public:
   }
 
   /**
-   * @brief get the height of given node number
+   * @brief get the height of given node number in the BSTree
    * @param node node number
-   * @return std::size_t 
+   * @return std::size_t
    */
   constexpr
   auto depth(const Ty &node) const
