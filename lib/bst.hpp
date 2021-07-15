@@ -124,8 +124,9 @@ public:
       -> void
   {
     ++m_size;
-    std::function<void(Ty, sh_ptr&)> insert_hidden
-          = [&insert_hidden, this](Ty &&val, sh_ptr &root)
+    std::function<void(Ty, sh_ptr&)>
+        insert_hidden = [&insert_hidden, this]
+                        (Ty &&val, sh_ptr &root)
         -> void
     {
       if ( !root ) {
@@ -148,9 +149,10 @@ public:
       -> void
   {
     ++m_size;
-    std::function<void(Ty, sh_ptr&)> insert_hidden
-        = [&insert_hidden, this](const Ty &val,
-                                    sh_ptr &root)
+    std::function<void(Ty, sh_ptr&)>
+      insert_hidden = [&insert_hidden, this]
+                        (const Ty &val,
+                          sh_ptr &root)
         -> void
     {
       if ( !root ) { // root == nullptr
@@ -180,20 +182,21 @@ public:
     }
     //
     assert((order > 0 && order < 4) && "- order undefined\n");
-    std::function<void(sh_ptr, int)> print_hidden
-        = [&print_hidden](const sh_ptr &root,
-                              const int order)
+    std::function<void(sh_ptr, int)>
+      print_hidden = [&print_hidden]
+                        (const sh_ptr &root,
+                          const int order)
         -> void
     {
-      if ( order == 1 && root != nullptr ) { // PRE-ORDER
+      if ( order == 1 && root != nullptr ) {
         std::cout << root->m_data << ' ';
         print_hidden(root->m_left, order);
         print_hidden(root->m_right, order);
-      } else if ( order == 2 && root != nullptr ) { // IN-ORDER
+      } else if ( order == 2 && root != nullptr ) {
         print_hidden(root->m_left, order);
         std::cout << root->m_data << ' ';
         print_hidden(root->m_right, order);
-      } else if ( order == 3 && root != nullptr ) { // POST-ORDER
+      } else if ( order == 3 && root != nullptr ) {
         print_hidden(root->m_left, order);
         print_hidden(root->m_right, order);
         std::cout << root->m_data << ' ';
@@ -218,8 +221,9 @@ public:
       return _failed_;
     }
     //
-    std::function<bool(Ty, sh_ptr)> find_hidden
-        = [&find_hidden](Ty &&val , sh_ptr &&root)
+    std::function<bool(Ty, sh_ptr)>
+      find_hidden = [&find_hidden]
+                      (Ty &&val , sh_ptr &&root)
       -> bool
     {
       if ( !root ) { return false; }
@@ -249,9 +253,9 @@ public:
       return _failed_;
     }
     //
-    std::function<bool(Ty, sh_ptr)> find_hidden
-         = [&find_hidden](const Ty& val ,
-                              const sh_ptr& root)
+    std::function<bool(Ty, sh_ptr)>
+      find_hidden = [&find_hidden]
+                      (const Ty& val , const sh_ptr& root)
       -> bool
     {
       if ( !root ) { return false; }
@@ -279,8 +283,9 @@ public:
       return _failed_;
     }
     //
-    std::function<sh_ptr(sh_ptr)> max_hidden
-        = [&max_hidden](const sh_ptr &root)
+    std::function<sh_ptr(sh_ptr)>
+      max_hidden = [&max_hidden]
+                      (const sh_ptr &root)
         -> sh_ptr
     {
       if ( !root ) { return nullptr; }
@@ -327,8 +332,9 @@ public:
       return;
     }
     //
-    std::function<void(Ty, sh_ptr&)> remove_hidden
-        = [&remove_hidden, this](Ty &&val, sh_ptr &root)
+    std::function<void(Ty, sh_ptr&)>
+      remove_hidden = [&remove_hidden, this]
+                        (Ty &&val, sh_ptr &root)
         -> void
     {
       if ( !root ) { return; }
@@ -360,8 +366,9 @@ public:
       return;
     }
     //
-    std::function<void(Ty, sh_ptr&)> remove_hidden
-        = [&remove_hidden, this](const Ty &val, sh_ptr &root)
+    std::function<void(Ty, sh_ptr&)>
+      remove_hidden = [&remove_hidden, this]
+                        (const Ty &val, sh_ptr &root)
         -> void
     {
       if ( !root ) { return; }
@@ -392,8 +399,7 @@ public:
     if ( is_empty() ) { empty_tree(); return 0ull;}
   //
     std::function<std::size_t(sh_ptr , Ty, std::size_t)>
-    depth_hidden
-        = [&depth_hidden](sh_ptr &&root, Ty &&node,
+    depth_hidden = [&depth_hidden](sh_ptr &&root, Ty &&node,
                                       std::size_t &&height)
         -> std::size_t
     {
@@ -421,7 +427,8 @@ public:
   //
     std::function<std::size_t(sh_ptr , Ty, std::size_t)>
     depth_hidden = [&depth_hidden](const sh_ptr &root,
-                            const Ty &node, std::size_t &&height)
+                            const Ty &node,
+                                  std::size_t &&height)
         -> std::size_t
     {
       if ( !root ) { return 0ull; }
