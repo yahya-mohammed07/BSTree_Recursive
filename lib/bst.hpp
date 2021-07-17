@@ -310,14 +310,6 @@ public:
     //
     return min(m_root)->m_data;
   }
-  constexpr
-  auto min (const sh_ptr &root) const
-        -> sh_ptr
-    {
-      if ( !root ) { return nullptr; }
-      if ( !root->m_left ) { return root; }
-      return min(root->m_left);
-    }
 
   /**
    * @brief remove a node from the BSTree
@@ -441,6 +433,17 @@ public:
   //
     return depth_hidden(m_root, node, 0ull);
   }
+//
+private:
+  constexpr
+  auto min (const sh_ptr &root) const
+        -> sh_ptr
+  {
+    if ( !root ) { return nullptr; }
+    if ( !root->m_left ) { return root; }
+    return min(root->m_left);
+  }
+
 };
 
 #endif // BST_HPP
