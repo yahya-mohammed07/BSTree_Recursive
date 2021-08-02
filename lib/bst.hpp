@@ -16,7 +16,7 @@
 //
 inline constexpr
 auto empty_tree = [] {
-  std::cout << "- tree is empty, value returned: ";
+  std::puts("- tree is empty, value returned: ");
 };
 
 template<class Ty>
