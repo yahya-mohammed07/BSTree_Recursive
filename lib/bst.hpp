@@ -13,6 +13,9 @@
 #include <cassert>
 #include <functional>
 #include <initializer_list>
+#include <stack>
+#include <queue>
+#include <vector>
 //
 inline constexpr
 auto empty_tree = [] {
@@ -43,7 +46,6 @@ class bst_
         : m_data(val), m_left(left), m_right(right) {}
   };
 //
-//TODO add iterators
 private:
 //
   using sh_ptr = std::shared_ptr<node>;
@@ -66,7 +68,53 @@ private:
   std::size_t m_size{};
   Ty _failed_{};
 //
+  class iterator {
+  private:
+    sh_ptr root_itr{};
+  //
+  public:
+    iterator(const sh_ptr & copy) : root_itr(copy) {}
+    iterator(sh_ptr && move) : root_itr(move) {}
+    iterator(const std::nullptr_t & copy ) : root_itr(copy) {}
+    iterator(std::nullptr_t && move ) : root_itr(move) {}
+    // var++
+    constexpr iterator operator++(int) {
+      root_itr = root_itr->m_right;
+      return *this;
+    }
+    // ++var
+    constexpr iterator operator++() {
+      root_itr = root_itr->m_left;
+      return *this;
+    }
+    // get data
+    constexpr Ty& operator*() const {
+      return root_itr->m_data;
+    }
+    // get and modify data
+    constexpr Ty& operator*() {
+      return root_itr->m_data;
+    }
+    constexpr bool operator!=(const sh_ptr & rhs) const {
+      return root_itr != rhs;
+    }
+    constexpr bool operator!=(sh_ptr && rhs) const {
+      return root_itr != rhs;
+    }
+  //
+  }; // end of class iterator
+//
 public:
+  [[nodiscard]]
+  constexpr auto begin() const noexcept
+    -> iterator { return iterator(m_root); }
+   [[nodiscard]]
+  constexpr auto begin() noexcept
+    -> iterator { return iterator(m_root); }
+
+  [[nodiscard]]
+  constexpr auto end() const noexcept
+    -> iterator { return nullptr; }
 
   explicit constexpr bst_() noexcept : m_root{nullptr} {};
 ///variadic inserting
@@ -125,20 +173,19 @@ public:
       -> void
   {
     ++m_size;
-    std::function<void(Ty, sh_ptr&)>
-        insert_hidden = [&insert_hidden, this]
-                        (Ty &&val, sh_ptr &root)
+    auto insert_hidden = [this]
+                (Ty &&val, sh_ptr &root, auto&& lambda)
         -> void
     {
       if ( !root ) {
         root = allocate(std::move(val), nullptr, nullptr);
       } else if (val > root->m_data) {
-        insert_hidden(std::move(val), root->m_right);
+        lambda(std::move(val), root->m_right, std::move(lambda));
       } else if (val < root->m_data) {
-        insert_hidden(std::move(val), root->m_left);
+        lambda(std::move(val), root->m_left, std::move(lambda));
       } else;
     };
-    insert_hidden(std::move(val), m_root);
+    insert_hidden(std::move(val), m_root, std::move(insert_hidden));
   }
 
   /**
@@ -150,21 +197,20 @@ public:
       -> void
   {
     ++m_size;
-    std::function<void(Ty, sh_ptr&)>
-      insert_hidden = [&insert_hidden, this]
+    auto insert_hidden = [this]
                         (const Ty &val,
-                          sh_ptr &root)
+                          sh_ptr &root, const auto& lambda)
         -> void
     {
       if ( !root ) { // root == nullptr
         root = allocate(val, nullptr, nullptr);
       } else if (val > root->m_data) {
-        insert_hidden(val, root->m_right);
+        lambda(val, root->m_right, lambda);
       } else if (val < root->m_data) {
-        insert_hidden(val, root->m_left);
+        lambda(val, root->m_left, lambda);
       } else;
     };
-    insert_hidden(val, m_root);
+    insert_hidden(val, m_root, insert_hidden);
   }
 
   /**
@@ -183,27 +229,27 @@ public:
     }
     //
     assert((order > 0 && order < 4) && "- order undefined\n");
-    std::function<void(sh_ptr, int)>
-      print_hidden = [&print_hidden]
+    auto print_hidden = []
                         (const sh_ptr &root,
-                          const int order)
+                          const int order,
+                            const auto &lambda)
         -> void
     {
       if ( order == 1 && root != nullptr ) {
         std::cout << root->m_data << ' ';
-        print_hidden(root->m_left, order);
-        print_hidden(root->m_right, order);
+        lambda(root->m_left, order, lambda);
+        lambda(root->m_right, order, lambda);
       } else if ( order == 2 && root != nullptr ) {
-        print_hidden(root->m_left, order);
+        lambda(root->m_left, order, lambda);
         std::cout << root->m_data << ' ';
-        print_hidden(root->m_right, order);
+        lambda(root->m_right, order, lambda);
       } else if ( order == 3 && root != nullptr ) {
-        print_hidden(root->m_left, order);
-        print_hidden(root->m_right, order);
+        lambda(root->m_left, order, lambda);
+        lambda(root->m_right, order, lambda);
         std::cout << root->m_data << ' ';
       }
     };
-    print_hidden(m_root, order);
+    print_hidden(m_root, order, print_hidden);
   }
 
   /**
@@ -219,23 +265,24 @@ public:
   {
     if (is_empty()) {
       empty_tree();
-      return _failed_;
+      return false;
     }
     //
-    std::function<bool(Ty, sh_ptr)>
-      find_hidden = [&find_hidden]
-                      (Ty &&val , sh_ptr &&root)
+    auto find_hidden = []
+                      (Ty &&val , const sh_ptr &root,
+                                   auto &&lambda)
       -> bool
     {
       if ( !root ) { return false; }
       else if (val > root->m_data) {
-        return find_hidden(std::move(val), root->m_right);
+        return lambda(std::move(val), root->m_right, std::move(lambda));
       } else if (val < root->m_data) {
-        return find_hidden(std::move(val), root->m_left);
+        return lambda(std::move(val), root->m_left, std::move(lambda));
       } else return true; // found
       return false;
     };
-    return find_hidden(std::move(val), m_root);
+    return find_hidden(std::move(val), m_root,
+                          std::move(find_hidden));
   }
 
   /**
@@ -251,23 +298,23 @@ public:
   {
     if (is_empty()) {
       empty_tree();
-      return _failed_;
+      return false;
     }
     //
-    std::function<bool(Ty, sh_ptr)>
-      find_hidden = [&find_hidden]
-                      (const Ty& val , const sh_ptr& root)
+    auto find_hidden = []
+                      (const Ty& val , const sh_ptr& root,
+                            const auto & lambda)
       -> bool
     {
       if ( !root ) { return false; }
       else if (val > root->m_data) {
-        return find_hidden(val, root->m_right);
+        return lambda(val, root->m_right, lambda);
       } else if (val < root->m_data) {
-        return find_hidden(val, root->m_left);
+        return lambda(val, root->m_left, lambda);
       } else return true; // found
       return false;
     };
-    return find_hidden(val, m_root);
+    return find_hidden(val, m_root, find_hidden);
   }
 
   /**
@@ -284,16 +331,16 @@ public:
       return _failed_;
     }
     //
-    std::function<sh_ptr(sh_ptr)>
-      max_hidden = [&max_hidden]
-                      (const sh_ptr &root)
+    auto max_hidden = []
+                      (const sh_ptr &root,
+                            const auto &lambda)
         -> sh_ptr
     {
       if ( !root ) { return nullptr; }
       if ( !root->m_right ) { return root; }
-      return max_hidden(root->m_right);
+      return lambda(root->m_right, lambda);
     };
-    return max_hidden(m_root)->m_data;
+    return max_hidden(m_root, max_hidden)->m_data;
   }
   /**
    * @brief get minimum element in BSTree
@@ -325,21 +372,21 @@ public:
       return;
     }
     //
-    std::function<void(Ty, sh_ptr&)>
-      remove_hidden = [&remove_hidden, this]
-                        (Ty &&val, sh_ptr &root)
+    auto remove_hidden = [this]
+                        (Ty &&val, sh_ptr &root,
+                            const auto &lambda)
         -> void
     {
       if ( !root ) { return; }
       else if ( val > root->m_data ) {
-        remove_hidden(std::move(val), root->m_right);
+        lambda(std::move(val), root->m_right, std::move(lambda));
       } else if ( val < root->m_data ) {
-        remove_hidden(std::move(val), root->m_left);
+        lambda(std::move(val), root->m_left, std::move(lambda));
       } else if ( root->m_right != nullptr
                       && root->m_left != nullptr)
       { // Has two children
         root->m_data = min(root->m_right)->m_data;
-        remove_hidden(std::move(root->m_data), root->m_right);
+        lambda(std::move(root->m_data), root->m_right, std::move(lambda));
       } else {
         sh_ptr old_node = root;
         root = (root->m_left != nullptr)
@@ -347,7 +394,7 @@ public:
         old_node.reset();
       }
     };
-    remove_hidden(std::move(val), m_root);
+    remove_hidden(std::move(val), m_root, std::move(remove_hidden));
   }
 
   constexpr
@@ -359,21 +406,21 @@ public:
       return;
     }
     //
-    std::function<void(Ty, sh_ptr&)>
-      remove_hidden = [&remove_hidden, this]
-                        (const Ty &val, sh_ptr &root)
+    auto remove_hidden = [this]
+                        (const Ty &val, sh_ptr &root,
+                            const auto &lambda)
         -> void
     {
       if ( !root ) { return; }
       else if ( val > root->m_data ) {
-        remove_hidden(val, root->m_right);
+        lambda(val, root->m_right, lambda);
       } else if ( val < root->m_data ) {
-        remove_hidden(val, root->m_left);
+        lambda(val, root->m_left, lambda);
       } else if ( root->m_right != nullptr
                       && root->m_left != nullptr)
       { // Has two children
         root->m_data = min(root->m_right)->m_data;
-        remove_hidden(root->m_data, root->m_right);
+        lambda(root->m_data, root->m_right, lambda);
       } else {
         sh_ptr old_node = root;
         root = (root->m_left != nullptr)
@@ -381,7 +428,7 @@ public:
         old_node.reset();
       }
     };
-    remove_hidden(val, m_root);
+    remove_hidden(val, m_root, remove_hidden);
   }
 
   //
@@ -390,21 +437,23 @@ public:
       -> std::size_t
   {
     if ( is_empty() ) { empty_tree(); return 0ull;}
-  //
-    std::function<std::size_t(sh_ptr , Ty, std::size_t)>
-    depth_hidden = [&depth_hidden](sh_ptr &&root, Ty &&node,
-                                      std::size_t &&height)
+    //
+    constexpr
+    auto depth_hidden = [](const sh_ptr &root, Ty &&node,
+                                      std::size_t &&height,
+                                        auto &&lambda)
         -> std::size_t
     {
       if ( !root ) { return 0ull; }
       else if  ( root->m_data == node ) { return height; }
       return static_cast<std::size_t> (std::max(
-        depth_hidden(root->m_left, node, height+1ull),
-        depth_hidden(root->m_right, node, height+1ull)
+        lambda(root->m_left, std::move(node), height+1ull, std::move(lambda)),
+        lambda(root->m_right, std::move(node), height+1ull, std::move(lambda))
       ));
     };
   //
-    return depth_hidden(std::move(m_root), node, 0ull);
+    return depth_hidden(m_root, std::move(node), 0ull,
+                            std::move(depth_hidden));
   }
 
   /**
@@ -418,22 +467,23 @@ public:
   {
     if ( is_empty() ) { empty_tree(); return 0ull;}
   //
-    std::function<std::size_t(sh_ptr , Ty, std::size_t)>
-    depth_hidden = [&depth_hidden](const sh_ptr &root,
+    auto depth_hidden = [](const sh_ptr &root,
                             const Ty &node,
-                                  std::size_t &&height)
+                                  std::size_t &&height,
+                                    const auto &lambda)
         -> std::size_t
     {
       if ( !root ) { return 0ull; }
       else if  ( root->m_data == node ) { return height; }
       return static_cast<std::size_t> (std::max(
-        depth_hidden(root->m_left, node, height+1ull),
-        depth_hidden(root->m_right, node, height+1ull)
+        lambda(root->m_left, node, height+1ull, lambda),
+        lambda(root->m_right, node, height+1ull, lambda)
       ));
     };
   //
-    return depth_hidden(m_root, node, 0ull);
+    return depth_hidden(m_root, node, 0ull, depth_hidden);
   }
+
 //
 private:
   constexpr
