@@ -14,8 +14,7 @@
 #include <functional>
 #include <initializer_list>
 #include <stack>
-#include <queue>
-#include <vector>
+
 //
 inline constexpr
 auto empty_tree = [] {
@@ -79,12 +78,12 @@ private:
     iterator(std::nullptr_t && move ) : root_itr(move) {}
     // var++
     constexpr iterator operator++(int) {
-      root_itr = root_itr->m_right;
+      // TODO;
       return *this;
     }
     // ++var
     constexpr iterator operator++() {
-      root_itr = root_itr->m_left;
+      // TODO;
       return *this;
     }
     // get data
@@ -107,10 +106,10 @@ private:
 public:
   [[nodiscard]]
   constexpr auto begin() const noexcept
-    -> iterator { return iterator(m_root); }
+    -> iterator { return iterator( min(m_root) ); }
    [[nodiscard]]
   constexpr auto begin() noexcept
-    -> iterator { return iterator(m_root); }
+    -> iterator { return iterator( min(m_root) ); }
 
   [[nodiscard]]
   constexpr auto end() const noexcept
