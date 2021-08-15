@@ -64,6 +64,7 @@ private:
   }
   //
   sh_ptr m_root{nullptr};
+  sh_ptr m_left_most{};
   std::size_t m_size{};
   Ty _failed_{};
 //
@@ -157,10 +158,10 @@ public:
 
   [[nodiscard]]
   constexpr auto begin() const noexcept
-    -> iterator { return iterator( min(m_root) ); }
+    -> iterator { return iterator( m_left_most ); }
    [[nodiscard]]
   constexpr auto begin() noexcept
-    -> iterator { return iterator( min(m_root) ); }
+    -> iterator { return iterator( m_left_most ); }
 
   [[nodiscard]]
   constexpr auto end() const noexcept
@@ -398,7 +399,7 @@ public:
    */
   [[nodiscard]]
   constexpr
-  auto min() const
+  auto min()
       -> Ty
   {
     if (is_empty()) {
@@ -406,6 +407,7 @@ public:
       return _failed_;
     }
     //
+    m_left_most = std::move( min(m_root) );
     return min(m_root)->m_data;
   }
 
@@ -422,6 +424,7 @@ public:
       return;
     }
     //
+    --m_size;
     auto remove_hidden = [this]
                         (Ty &&val, sh_ptr &root,
                             auto &&lambda)
@@ -456,6 +459,7 @@ public:
       return;
     }
     //
+    --m_size;
     auto remove_hidden = [this]
                         (const Ty &val, sh_ptr &root,
                             auto &&lambda)
@@ -537,7 +541,7 @@ public:
 //
 private:
   constexpr
-  auto min (const sh_ptr &root) const
+  auto min (const sh_ptr &root)
         -> sh_ptr
   {
     if ( !root ) { return nullptr; }
