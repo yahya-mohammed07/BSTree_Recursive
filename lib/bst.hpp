@@ -52,13 +52,13 @@ private:
   constexpr
   auto allocate(const Ty& val, const sh_ptr& left,
                     const sh_ptr& right)
-      -> sh_ptr
+      -> const sh_ptr
   {
     return std::make_shared<node>(val, left, right);
   }
   constexpr
   auto allocate(Ty &&val, sh_ptr &&left, sh_ptr &&right)
-      -> sh_ptr
+      -> sh_ptr&&
   {
     return std::make_shared<node>(val, left, right);
   }
@@ -106,7 +106,7 @@ private:
 //
 public:
 //
-  explicit constexpr bst_() noexcept : m_root{nullptr} {};
+  constexpr bst_() noexcept : m_root{nullptr} {};
 
 //
   [[nodiscard]]
@@ -165,7 +165,7 @@ public:
 
   [[nodiscard]]
   constexpr auto end() const noexcept
-    -> iterator { return nullptr; }
+    -> iterator { return iterator(nullptr); }
 //
 
 ///variadic inserting
@@ -229,14 +229,16 @@ public:
         -> void
     {
       if ( !root ) {
-        root = allocate(std::move(val), nullptr, nullptr);
+        root = allocate(std::move(val), std::move(nullptr),
+                                            std::move(nullptr));
       } else if (val > root->m_data) {
         lambda(std::move(val), root->m_right, std::move(lambda));
       } else if (val < root->m_data) {
         lambda(std::move(val), root->m_left, std::move(lambda));
       } else;
     };
-    insert_hidden(std::move(val), m_root, std::move(insert_hidden));
+    insert_hidden(std::move(val), std::move(m_root),
+                                    std::move(insert_hidden));
   }
 
   /**
@@ -280,6 +282,7 @@ public:
     }
     //
     assert((order > 0 && order < 4) && "- order undefined\n");
+    constexpr
     auto print_hidden = []
                         (const sh_ptr &root,
                           const int order,
@@ -319,6 +322,7 @@ public:
       return false;
     }
     //
+    constexpr
     auto contains_hidden = []
                       (Ty &&val , const sh_ptr &root,
                                    auto &&lambda)
@@ -352,6 +356,7 @@ public:
       return false;
     }
     //
+    constexpr
     auto contains_hidden = []
                       (const Ty& val , const sh_ptr& root,
                             auto &&lambda)
@@ -382,6 +387,7 @@ public:
       return _failed_;
     }
     //
+    constexpr
     auto max_hidden = []
                       (const sh_ptr &root,
                             auto &&lambda)
@@ -500,7 +506,7 @@ public:
     {
       if ( !root ) { return 0ull; }
       else if  ( root->m_data == node ) { return height; }
-      return static_cast<std::size_t> (std::max(
+      return static_cast<std::size_t>(std::max(
         lambda(root->m_left, std::move(node), height+1ull, std::move(lambda)),
         lambda(root->m_right, std::move(node), height+1ull, std::move(lambda))
       ));
@@ -520,7 +526,8 @@ public:
       -> std::size_t
   {
     if ( is_empty() ) { empty_tree(); return 0ull;}
-  //
+    //
+    constexpr
     auto depth_hidden = [](const sh_ptr &root,
                             const Ty &node,
                                   std::size_t &&height,
