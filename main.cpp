@@ -8,8 +8,10 @@ auto main() -> int
   std::puts("");
   std::cout << nums.max() << '\n';
   std::cout << nums.min() << '\n';
-  std::cout << nums.find(22) << '\n';
+  std::cout << nums.contains(22) << '\n';
   std::cout << nums.depth(5) << '\n';
+  std::cout << *nums.find(5) << '\n';
+  std::cout << *nums.begin() << '\n';
   nums.remove(5);
   nums.print(2);
 }
