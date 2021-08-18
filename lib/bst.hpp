@@ -1,12 +1,14 @@
 /**
  * @file bst.hpp
- * @author your name (goldroger.1993@outlook.com)
- * @version 0.1
+ * @author yahya mohammed (goldroger.1993@outlook.com)
+ * @version 1.5
  * @date 2021-07-7 (date started)
  */
-// LIBRARIES
+
 #ifndef BST_HPP
 #define BST_HPP
+
+// includes
 
 #include <iostream>
 #include <memory>
@@ -14,12 +16,35 @@
 #include <functional>
 #include <initializer_list>
 #include <stack>
+#include <unordered_map>
+#include <string_view>
 
-//
-inline constexpr
-auto empty_tree = [] {
-  std::puts("- tree is empty, value returned: ");
+
+enum class Apology {
+  empty = 1,
+  not_found = 2,
 };
+
+inline
+const std::unordered_map<Apology, std::string_view>
+  Apologies =
+{
+  { Apology::empty, "- Apology: Tree is empty...\n" },
+  { Apology::not_found, "- Apology: Node not found...\n" },
+};
+
+inline
+auto check_apology(const Apology& apology)
+    -> void
+{
+
+  if ( apology == Apology::empty ) {
+    std::cerr << Apologies.at( Apology::empty );
+    assert(false);
+  }
+  std::cerr << Apologies.at( Apology::not_found );
+  assert(false);
+}
 
 template<class Ty>
 class bst_
@@ -73,10 +98,10 @@ private:
     sh_ptr root_itr{};
   //
   public:
-    iterator(const sh_ptr & copy) : root_itr(copy) {}
-    iterator(sh_ptr && move) : root_itr(move) {}
-    iterator(const std::nullptr_t & copy ) : root_itr(copy) {}
-    iterator(std::nullptr_t && move ) : root_itr(move) {}
+    iterator(const sh_ptr &copy) : root_itr(copy) {}
+    iterator(sh_ptr &&move) : root_itr(move) {}
+    iterator(std::nullptr_t &&move ) : root_itr(move) {}
+    iterator(const std::nullptr_t &move ) : root_itr(move) {}
     // foo++
     constexpr iterator operator++(int) {
       // TODO
@@ -101,6 +126,13 @@ private:
     constexpr bool operator!=(sh_ptr && rhs) const {
       return root_itr != rhs;
     }
+
+    constexpr bool operator==(const sh_ptr & rhs) const {
+      return root_itr == rhs;
+    }
+    constexpr bool operator==(sh_ptr && rhs) const {
+      return root_itr == rhs;
+    }
   //
   }; // end of class iterator
 //
@@ -108,19 +140,35 @@ public:
 //
   constexpr bst_() noexcept : m_root{nullptr} {};
 
+  constexpr bst_(const bst_<Ty> &rhs) noexcept {
+    m_root = rhs.m_root;
+    m_size = rhs.m_size;
+    m_left_most = rhs.m_left_most;
+  }
+
+  constexpr bst_(bst_<Ty> &&rhs) noexcept
+    : m_root(std::move(rhs.m_root)),
+        m_left_most(std::move(rhs.m_left_most)),
+          m_size(std::move(rhs.m_size))
+  {
+    rhs.m_root.reset();
+    rhs.m_size = 0;
+    rhs.m_left_most.reset();
+  }
+
 //
   [[nodiscard]]
   constexpr auto find(Ty &&node) const
-      -> iterator
+      -> const iterator
   {
     if ( is_empty() ) {
-      empty_tree();
       return end();
     }
-    auto find_hidden = [] (Ty &&node, const sh_ptr& root,
+    auto find_hidden = [this] (Ty &&node, const sh_ptr& root,
                                     auto && lambda)
-        -> iterator
+        -> const iterator
     {
+      if ( !root ) return end();
       if ( node > root->m_data ) {
         return lambda(std::move(node), root->m_right,
                             std::move(lambda));
@@ -128,22 +176,23 @@ public:
           return lambda(std::move(node), root->m_left,
                       std::move(lambda));
       } else return root;
+      return end();
     };
     return find_hidden(std::move(node), m_root,
                             std::move(find_hidden));
   }
   [[nodiscard]]
   constexpr auto find(const Ty &node) const
-      -> iterator
+      -> const iterator
   {
     if ( is_empty() ) {
-      empty_tree();
       return end();
     }
-    auto find_hidden = [] (const Ty &node, const sh_ptr& root,
+    auto find_hidden = [this] (const Ty &node, const sh_ptr& root,
                                     auto && lambda)
-        -> iterator
+        -> const iterator
     {
+      if ( !root ) return end();
       if ( node > root->m_data ) {
         return lambda(node, root->m_right,
                             std::move(lambda));
@@ -151,6 +200,7 @@ public:
           return lambda(node, root->m_left,
                       std::move(lambda));
       } else return root;
+      return end();
     };
     return find_hidden(node, m_root,
                             std::move(find_hidden));
@@ -165,7 +215,7 @@ public:
 
   [[nodiscard]]
   constexpr auto end() const noexcept
-    -> iterator { return iterator(nullptr); }
+    ->  std::nullptr_t { return nullptr; }
 //
 
 ///variadic inserting
@@ -277,7 +327,7 @@ public:
       -> void
   {
     if ( is_empty() ) {
-      empty_tree();
+      check_apology( Apology::empty );
       return;
     }
     //
@@ -317,8 +367,8 @@ public:
   auto contains(Ty &&val) const
     -> bool
   {
-    if (is_empty()) {
-      empty_tree();
+    if ( is_empty() ) {
+      check_apology( Apology::empty );
       return false;
     }
     //
@@ -351,8 +401,8 @@ public:
   auto contains(const Ty &val) const
     -> bool
   {
-    if (is_empty()) {
-      empty_tree();
+    if ( is_empty() ) {
+      check_apology( Apology::empty );
       return false;
     }
     //
@@ -382,8 +432,8 @@ public:
   auto max() const
       -> Ty
   {
-    if (is_empty()) {
-      empty_tree();
+    if ( is_empty() ) {
+      check_apology( Apology::empty );
       return _failed_;
     }
     //
@@ -408,8 +458,8 @@ public:
   auto min()
       -> Ty
   {
-    if (is_empty()) {
-      empty_tree();
+    if ( is_empty() ) {
+      check_apology( Apology::empty );
       return _failed_;
     }
     //
@@ -426,7 +476,7 @@ public:
 	  -> void
   {
     if ( is_empty() ) {
-      empty_tree();
+      check_apology( Apology::empty );
       return;
     }
     //
@@ -461,7 +511,7 @@ public:
 	  -> void
   {
     if ( is_empty() ) {
-      empty_tree();
+      check_apology( Apology::empty );
       return;
     }
     //
@@ -496,7 +546,7 @@ public:
   auto depth(Ty &&node) const
       -> std::size_t
   {
-    if ( is_empty() ) { empty_tree(); return 0ull;}
+    if ( is_empty() ) {check_apology( Apology::empty ); return 0ull;}
     //
     constexpr
     auto depth_hidden = [](const sh_ptr &root, Ty &&node,
@@ -525,7 +575,10 @@ public:
   auto depth(const Ty &node) const
       -> std::size_t
   {
-    if ( is_empty() ) { empty_tree(); return 0ull;}
+    if ( is_empty() ) {
+      check_apology( Apology::empty );
+      return 0ull;
+    }
     //
     constexpr
     auto depth_hidden = [](const sh_ptr &root,
@@ -556,6 +609,30 @@ private:
     return min(root->m_left);
   }
 
+// operators
+public:
+
+  constexpr bst_<Ty>& operator=(const bst_<Ty> &rhs) noexcept {
+    if (this != &rhs) {
+      m_root      = rhs.m_root;
+      m_size      = rhs.m_size;
+      m_left_most = rhs.m_left_most;
+    }
+    return *this;
+  }
+
+  constexpr bst_<Ty>& operator=(bst_<Ty> &&rhs) noexcept {
+    if (this != &rhs) {
+      m_root        = std::move(rhs.m_root);
+      m_size        = std::move(rhs.m_size);
+      m_left_most   = std::move(rhs.m_left_most);
+      //
+      rhs.m_root.reset();
+      rhs.m_size = 0;
+      rhs.m_left_most.reset();
+    }
+    return *this;
+  }
 };
 
 #endif // BST_HPP
