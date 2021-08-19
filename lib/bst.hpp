@@ -12,39 +12,12 @@
 
 #include <iostream>
 #include <memory>
-#include <cassert>
 #include <functional>
 #include <initializer_list>
 #include <stack>
-#include <unordered_map>
-#include <string_view>
+#include "apology.hpp"
 
 
-enum class Apology {
-  empty = 1,
-  not_found = 2,
-};
-
-inline
-const std::unordered_map<Apology, std::string_view>
-  Apologies =
-{
-  { Apology::empty, "- Apology: Tree is empty...\n" },
-  { Apology::not_found, "- Apology: Node not found...\n" },
-};
-
-inline
-auto check_apology(const Apology& apology)
-    -> void
-{
-
-  if ( apology == Apology::empty ) {
-    std::cerr << Apologies.at( Apology::empty );
-    assert(false);
-  }
-  std::cerr << Apologies.at( Apology::not_found );
-  assert(false);
-}
 
 template<class Ty>
 class bst_
@@ -327,11 +300,11 @@ public:
       -> void
   {
     if ( is_empty() ) {
-      check_apology( Apology::empty );
+      get_apology( Apology::empty );
       return;
     }
     //
-    assert((order > 0 && order < 4) && "- order undefined\n");
+    get_apology( Apology::invalid_order );
     constexpr
     auto print_hidden = []
                         (const sh_ptr &root,
@@ -368,7 +341,7 @@ public:
     -> bool
   {
     if ( is_empty() ) {
-      check_apology( Apology::empty );
+      get_apology( Apology::empty );
       return false;
     }
     //
@@ -402,7 +375,7 @@ public:
     -> bool
   {
     if ( is_empty() ) {
-      check_apology( Apology::empty );
+      get_apology( Apology::empty );
       return false;
     }
     //
@@ -433,7 +406,7 @@ public:
       -> Ty
   {
     if ( is_empty() ) {
-      check_apology( Apology::empty );
+      get_apology( Apology::empty );
       return _failed_;
     }
     //
@@ -459,7 +432,7 @@ public:
       -> Ty
   {
     if ( is_empty() ) {
-      check_apology( Apology::empty );
+      get_apology( Apology::empty );
       return _failed_;
     }
     //
@@ -476,7 +449,7 @@ public:
 	  -> void
   {
     if ( is_empty() ) {
-      check_apology( Apology::empty );
+      get_apology( Apology::empty );
       return;
     }
     //
@@ -511,7 +484,7 @@ public:
 	  -> void
   {
     if ( is_empty() ) {
-      check_apology( Apology::empty );
+      get_apology( Apology::empty );
       return;
     }
     //
@@ -546,7 +519,7 @@ public:
   auto depth(Ty &&node) const
       -> std::size_t
   {
-    if ( is_empty() ) {check_apology( Apology::empty ); return 0ull;}
+    if ( is_empty() ) {get_apology( Apology::empty ); return 0ull;}
     //
     constexpr
     auto depth_hidden = [](const sh_ptr &root, Ty &&node,
@@ -576,7 +549,7 @@ public:
       -> std::size_t
   {
     if ( is_empty() ) {
-      check_apology( Apology::empty );
+      get_apology( Apology::empty );
       return 0ull;
     }
     //
