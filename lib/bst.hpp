@@ -1,7 +1,7 @@
 /**
  * @file bst.hpp
  * @author yahya mohammed (goldroger.1993@outlook.com)
- * @version 1.5
+ * @version 2.0
  * @date 2021-07-7 (date started)
  */
 
@@ -10,7 +10,6 @@
 
 // includes
 
-#include <iostream>
 #include <memory>
 #include <functional>
 #include <initializer_list>
@@ -18,71 +17,131 @@
 #include "apology.hpp"
 
 
+template<class Ty>
+struct _Node
+{
+  using sh_ptr = std::shared_ptr<_Node>;
+  //
+  Ty m_data{};
+  sh_ptr m_left{};
+  sh_ptr m_right{};
+  sh_ptr m_parent{}; // to hold parent of each node
+  //
+  explicit constexpr
+  _Node(const Ty& val, const sh_ptr& left,
+                            const sh_ptr& right,
+                              const sh_ptr & parent)
+                                  noexcept
+      : m_data(val), m_left(left), m_right(right), m_parent(parent) {}
+  //
+  explicit constexpr
+  _Node(Ty&& val, sh_ptr&& left, sh_ptr&& right, sh_ptr &&parent)
+                                    noexcept
+      : m_data(val), m_left(left), m_right(right), m_parent(parent)  {}
+
+  ~_Node() {
+    dest(m_parent);
+  }
+private:
+  constexpr
+  void dest(sh_ptr &parent) {
+    if ( !m_parent ) { return; }
+    if ( parent ) {
+      dest(parent->m_left);
+      dest(parent->m_right);
+      parent.reset();
+      parent = nullptr;
+    }
+    m_data = {};
+    parent = nullptr;
+  }
+};
 
 template<class Ty>
 class bst_
 {
 //
-  struct node
-  {
-    using sh_ptr = std::shared_ptr<node>;
-    //
-    Ty m_data{};
-    sh_ptr m_left{};
-    sh_ptr m_right{};
-    //
-    explicit constexpr
-    node(const Ty& val, const sh_ptr& left,
-                              const sh_ptr& right)
-                                    noexcept
-        : m_data(val), m_left(left), m_right(right) {}
-    //
-    explicit constexpr
-    node(Ty&& val, sh_ptr&& left, sh_ptr&& right)
-                                      noexcept
-        : m_data(val), m_left(left), m_right(right) {}
-  };
-//
 private:
-//
-  using sh_ptr = std::shared_ptr<node>;
+  using sh_ptr = std::shared_ptr<_Node<Ty>>;
   // allocators
   constexpr
   auto allocate(const Ty& val, const sh_ptr& left,
-                    const sh_ptr& right)
-      -> const sh_ptr
+                    const sh_ptr& right, const sh_ptr& par)
+      -> sh_ptr
   {
-    return std::make_shared<node>(val, left, right);
+    return std::make_shared<_Node<Ty>>(val, left, right, par);
   }
   constexpr
-  auto allocate(Ty &&val, sh_ptr &&left, sh_ptr &&right)
-      -> sh_ptr&&
+  auto allocate(Ty &&val, sh_ptr &&left, sh_ptr &&right, sh_ptr && par)
+      -> sh_ptr
   {
-    return std::make_shared<node>(val, left, right);
+    return std::make_shared<_Node<Ty>>(val, left, right, par);
   }
   //
-  sh_ptr m_root{nullptr};
-  sh_ptr m_left_most{};
+private:
+  sh_ptr m_root{};
   std::size_t m_size{};
   Ty _failed_{};
 //
-  class iterator {
+public:
+  class bst_itr {
   private:
+  friend class bst_<Ty>;
     sh_ptr root_itr{};
+    bst_<Ty> *tree{};
+    bst_itr(const sh_ptr& ptr, const bst_<Ty> *tree_ptr)
+      : root_itr(ptr), tree(tree_ptr)
+      {}
   //
   public:
-    iterator(const sh_ptr &copy) : root_itr(copy) {}
-    iterator(sh_ptr &&move) : root_itr(move) {}
-    iterator(std::nullptr_t &&move ) : root_itr(move) {}
-    iterator(const std::nullptr_t &move ) : root_itr(move) {}
+    constexpr bst_itr() : root_itr(nullptr) {}
+    constexpr bst_itr(const sh_ptr &copy) : root_itr(copy) {}
+    constexpr bst_itr(sh_ptr &&move) : root_itr(move) {}
+    constexpr bst_itr(std::nullptr_t &&move ) : root_itr(move) {}
+    constexpr bst_itr(const std::nullptr_t &copy ) : root_itr(copy) {}
     // foo++
-    constexpr iterator operator++(int) {
+    constexpr bst_itr operator++(int) {
       // TODO
       return *this;
     }
-    // ++foo
-    constexpr iterator operator++() {
-      // TODO;
+    // ++foo // in-order
+    // many thanks to: https://www.cs.odu.edu/~zeil/cs361/latest/Public/treetraversal
+    constexpr bst_itr operator++() {
+      sh_ptr temp{};
+      if (root_itr == nullptr) {
+        // ++ from end(). get the root of the tree
+        root_itr = tree->m_root;
+        // error! ++ requested for an empty tree
+        if (root_itr == nullptr) { get_apology(Apology::not_found); }
+        // move to the smallest value in the tree,
+        // which is the first node in order
+        while (root_itr->m_left != nullptr) {
+                root_itr = root_itr->m_left;
+        }
+      } else if (root_itr->m_right != nullptr) {
+        // successor is the farthest left node of right subtree
+        root_itr = root_itr->m_right;
+        while (root_itr->m_left != nullptr) {
+          root_itr = root_itr->m_left;
+        }
+      } else {
+        // have already processed the left subtree, and
+        // there is no right subtree. move up the tree,
+        // looking for a parent for which nodePtr is a left child,
+        // stopping if the parent becomes NULL. a non-NULL parent
+        // is the successor. if parent is NULL, the original node
+        // was the last node in order, and its successor
+        // is the end of the list
+        temp = root_itr->m_parent;
+        while (temp != nullptr && root_itr == temp->m_right) {
+          root_itr = temp;
+          temp = temp->m_parent;
+        }
+        // if we were previously at the right-most node in
+        // the tree, nodePtr = nullptr, and the iterator specifies
+        // the end of the list
+        root_itr = temp;
+      }
       return *this;
     }
     // get data
@@ -93,53 +152,46 @@ private:
     constexpr Ty& operator*() {
       return root_itr->m_data;
     }
-    constexpr bool operator!=(const sh_ptr & rhs) const {
-      return root_itr != rhs;
+    constexpr bool operator!=(const bst_itr & rhs) const {
+      return root_itr != rhs.root_itr;
     }
-    constexpr bool operator!=(sh_ptr && rhs) const {
-      return root_itr != rhs;
-    }
-
-    constexpr bool operator==(const sh_ptr & rhs) const {
-      return root_itr == rhs;
-    }
-    constexpr bool operator==(sh_ptr && rhs) const {
-      return root_itr == rhs;
+    constexpr bool operator==(const bst_itr & rhs) const {
+      return root_itr == rhs.root_itr;
     }
   //
   }; // end of class iterator
 //
 public:
 //
+  using const_itr = bst_itr;
+  using iterator  = const_itr;
+
   constexpr bst_() noexcept : m_root{nullptr} {};
 
   constexpr bst_(const bst_<Ty> &rhs) noexcept {
     m_root = rhs.m_root;
     m_size = rhs.m_size;
-    m_left_most = rhs.m_left_most;
   }
 
   constexpr bst_(bst_<Ty> &&rhs) noexcept
     : m_root(std::move(rhs.m_root)),
-        m_left_most(std::move(rhs.m_left_most)),
           m_size(std::move(rhs.m_size))
   {
     rhs.m_root.reset();
     rhs.m_size = 0;
-    rhs.m_left_most.reset();
   }
 
 //
   [[nodiscard]]
   constexpr auto find(Ty &&node) const
-      -> const iterator
+      -> const const_itr
   {
     if ( is_empty() ) {
       return end();
     }
     auto find_hidden = [this] (Ty &&node, const sh_ptr& root,
                                     auto && lambda)
-        -> const iterator
+        -> const const_itr
     {
       if ( !root ) return end();
       if ( node > root->m_data ) {
@@ -154,16 +206,42 @@ public:
     return find_hidden(std::move(node), m_root,
                             std::move(find_hidden));
   }
+
+  [[nodiscard]]
+  constexpr auto find(Ty &&node)
+      -> iterator
+  {
+    if ( is_empty() ) {
+      return end();
+    }
+    auto find_hidden = [this] (Ty &&node, const sh_ptr& root,
+                                    auto && lambda)
+        -> iterator
+    {
+      if ( !root ) return end();
+      if ( node > root->m_data ) {
+        return lambda(std::move(node), root->m_right,
+                            std::move(lambda));
+      } else if ( node < root->m_data) {
+          return lambda(std::move(node), root->m_left,
+                      std::move(lambda));
+      } else return root;
+      return end();
+    };
+    return find_hidden(std::move(node), m_root,
+                            std::move(find_hidden));
+  }
+//
   [[nodiscard]]
   constexpr auto find(const Ty &node) const
-      -> const iterator
+      -> const const_itr
   {
     if ( is_empty() ) {
       return end();
     }
     auto find_hidden = [this] (const Ty &node, const sh_ptr& root,
                                     auto && lambda)
-        -> const iterator
+        -> const const_itr
     {
       if ( !root ) return end();
       if ( node > root->m_data ) {
@@ -180,15 +258,52 @@ public:
   }
 
   [[nodiscard]]
+  constexpr auto find(const Ty &node)
+      -> iterator
+  {
+    if ( is_empty() ) {
+      return end();
+    }
+    auto find_hidden = [this] (const Ty &node, const sh_ptr& root,
+                                    auto && lambda)
+        -> iterator
+    {
+      if ( !root ) return end();
+      if ( node > root->m_data ) {
+        return lambda(node, root->m_right,
+                            std::move(lambda));
+      } else if ( node < root->m_data) {
+          return lambda(node, root->m_left,
+                      std::move(lambda));
+      } else return root;
+      return end();
+    };
+    return find_hidden(node, m_root,
+                            std::move(find_hidden));
+  }
+//
+  [[nodiscard]]
   constexpr auto begin() const noexcept
-    -> iterator { return iterator( m_left_most ); }
+    -> const_itr {
+      if ( is_empty() ) {
+        get_apology(Apology::empty);
+        return end();
+      }
+      return const_itr( min(m_root) );
+    }
    [[nodiscard]]
   constexpr auto begin() noexcept
-    -> iterator { return iterator( m_left_most ); }
+    -> iterator {
+      if ( is_empty() ) {
+        get_apology(Apology::empty);
+        return end();
+      }
+      return iterator( min(m_root) );
+    }
 
   [[nodiscard]]
   constexpr auto end() const noexcept
-    ->  std::nullptr_t { return nullptr; }
+    -> const_itr { return const_itr(nullptr); }
 //
 
 ///variadic inserting
@@ -239,7 +354,7 @@ public:
   }
 
   /**
-   * @brief insert an element to BSTree
+   * @brief insert an element to BSTree also supplie `m_parent`
    * @param val
    */
   constexpr
@@ -248,19 +363,19 @@ public:
   {
     ++m_size;
     auto insert_hidden = [this]
-                (Ty &&val, sh_ptr &root, auto&& lambda)
+                (Ty &&val, sh_ptr &root, const sh_ptr &par, auto&& lambda)
         -> void
     {
       if ( !root ) {
         root = allocate(std::move(val), std::move(nullptr),
-                                            std::move(nullptr));
+                                          std::move(nullptr), std::move(par));
       } else if (val > root->m_data) {
-        lambda(std::move(val), root->m_right, std::move(lambda));
+        lambda(std::move(val), root->m_right, root, std::move(lambda));
       } else if (val < root->m_data) {
-        lambda(std::move(val), root->m_left, std::move(lambda));
+        lambda(std::move(val), root->m_left, root, std::move(lambda));
       } else;
     };
-    insert_hidden(std::move(val), std::move(m_root),
+    insert_hidden(std::move(val), m_root, nullptr,
                                     std::move(insert_hidden));
   }
 
@@ -275,18 +390,18 @@ public:
     ++m_size;
     auto insert_hidden = [this]
                         (const Ty &val,
-                          sh_ptr &root, auto&& lambda)
+                          sh_ptr &root, const sh_ptr &par, auto&& lambda)
         -> void
     {
       if ( !root ) { // root == nullptr
-        root = allocate(val, nullptr, nullptr);
+        root = allocate(val, nullptr, nullptr, par);
       } else if (val > root->m_data) {
-        lambda(val, root->m_right, std::move(lambda));
+        lambda(val, root->m_right, root, std::move(lambda));
       } else if (val < root->m_data) {
-        lambda(val, root->m_left, std::move(lambda));
+        lambda(val, root->m_left, root, std::move(lambda));
       } else;
     };
-    insert_hidden(val, m_root, std::move(insert_hidden));
+    insert_hidden(val, m_root, nullptr, std::move(insert_hidden));
   }
 
   /**
@@ -304,7 +419,7 @@ public:
       return;
     }
     //
-    get_apology( Apology::invalid_order );
+    if ( order < 0 || order > 3) { get_apology( Apology::invalid_order ); }
     constexpr
     auto print_hidden = []
                         (const sh_ptr &root,
@@ -436,7 +551,6 @@ public:
       return _failed_;
     }
     //
-    m_left_most = std::move( min(m_root) );
     return min(m_root)->m_data;
   }
 
@@ -570,7 +684,28 @@ public:
   //
     return depth_hidden(m_root, node, 0ull, std::move(depth_hidden));
   }
-
+//
+  [[nodiscard]] constexpr
+  auto get_parent(Ty &&val) const
+    -> iterator
+  {
+    if ( is_empty() ) {
+      get_apology( Apology::empty );
+      return end();
+    }
+    if (find(val) == end() || val == m_root->m_data ) {
+      get_apology( Apology::invalid_node );
+      return end();
+    }
+    // return iterator to val
+    const auto val_itr = find(val);
+    // return iterator to val's parent
+    return iterator( val_itr.root_itr->m_parent );
+  }
+//
+  ~bst_() {
+    destroy_tree();
+  }
 //
 private:
   constexpr
@@ -582,6 +717,30 @@ private:
     return min(root->m_left);
   }
 
+  constexpr
+  auto destroy_tree() // FIXME: causes leaks in normal calls
+    -> void
+  {
+    if ( is_empty() ) {
+      get_apology( Apology::empty );
+      return;
+    }
+    auto destroy_hidden = [this] (sh_ptr &root, auto &&lambda)
+      -> void
+    {
+      if ( root ) {
+        lambda(root->m_left, std::move(lambda));
+        lambda(root->m_right, std::move(lambda));
+        root->m_data = {};
+        root.reset();
+      }
+      root = nullptr;
+      m_size = {};
+      return;
+    };
+    destroy_hidden(m_root, std::move(destroy_hidden));
+  }
+
 // operators
 public:
 
@@ -589,7 +748,6 @@ public:
     if (this != &rhs) {
       m_root      = rhs.m_root;
       m_size      = rhs.m_size;
-      m_left_most = rhs.m_left_most;
     }
     return *this;
   }
@@ -598,11 +756,9 @@ public:
     if (this != &rhs) {
       m_root        = std::move(rhs.m_root);
       m_size        = std::move(rhs.m_size);
-      m_left_most   = std::move(rhs.m_left_most);
       //
       rhs.m_root.reset();
       rhs.m_size = 0;
-      rhs.m_left_most.reset();
     }
     return *this;
   }
