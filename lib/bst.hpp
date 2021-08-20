@@ -1,7 +1,7 @@
 /**
  * @file bst.hpp
  * @author yahya mohammed (goldroger.1993@outlook.com)
- * @version 2.0
+ * @version 2.0.1
  * @date 2021-07-7 (date started)
  */
 
@@ -16,66 +16,64 @@
 #include <stack>
 #include "apology.hpp"
 
-
-template<class Ty>
-struct _Node
-{
-  using sh_ptr = std::shared_ptr<_Node>;
-  //
-  Ty m_data{};
-  sh_ptr m_left{};
-  sh_ptr m_right{};
-  sh_ptr m_parent{}; // to hold parent of each node
-  //
-  explicit constexpr
-  _Node(const Ty& val, const sh_ptr& left,
-                            const sh_ptr& right,
-                              const sh_ptr & parent)
-                                  noexcept
-      : m_data(val), m_left(left), m_right(right), m_parent(parent) {}
-  //
-  explicit constexpr
-  _Node(Ty&& val, sh_ptr&& left, sh_ptr&& right, sh_ptr &&parent)
-                                    noexcept
-      : m_data(val), m_left(left), m_right(right), m_parent(parent)  {}
-
-  ~_Node() {
-    dest(m_parent);
-  }
-private:
-  constexpr
-  void dest(sh_ptr &parent) {
-    if ( !m_parent ) { return; }
-    if ( parent ) {
-      dest(parent->m_left);
-      dest(parent->m_right);
-      parent.reset();
-      parent = nullptr;
-    }
-    m_data = {};
-    parent = nullptr;
-  }
-};
-
 template<class Ty>
 class bst_
 {
 //
+  struct node
+  {
+    using sh_ptr = std::shared_ptr<node>;
+    //
+    Ty m_data{};
+    sh_ptr m_left{};
+    sh_ptr m_right{};
+    sh_ptr m_parent{}; // to hold parent of each node
+    //
+    explicit constexpr
+    node(const Ty& val, const sh_ptr& left,
+                              const sh_ptr& right,
+                                const sh_ptr & parent)
+                                    noexcept
+        : m_data(val), m_left(left), m_right(right), m_parent(parent) {}
+    //
+    explicit constexpr
+    node(Ty&& val, sh_ptr&& left, sh_ptr&& right, sh_ptr &&parent)
+                                      noexcept
+        : m_data(val), m_left(left), m_right(right), m_parent(parent)  {}
+
+    ~node() {
+      dest(m_parent);
+    }
+  private:
+    constexpr
+    void dest(sh_ptr &parent) {
+      if ( !m_parent ) { return; }
+      if ( parent ) {
+        dest(parent->m_left);
+        dest(parent->m_right);
+        parent->m_left.reset();
+        parent->m_right.reset();
+        parent.reset();
+      }
+      m_data = {};
+      parent = nullptr;
+    }
+  };
 private:
-  using sh_ptr = std::shared_ptr<_Node<Ty>>;
+  using sh_ptr = std::shared_ptr<node>;
   // allocators
   constexpr
   auto allocate(const Ty& val, const sh_ptr& left,
                     const sh_ptr& right, const sh_ptr& par)
       -> sh_ptr
   {
-    return std::make_shared<_Node<Ty>>(val, left, right, par);
+    return std::make_shared<node>(val, left, right, par);
   }
   constexpr
   auto allocate(Ty &&val, sh_ptr &&left, sh_ptr &&right, sh_ptr && par)
       -> sh_ptr
   {
-    return std::make_shared<_Node<Ty>>(val, left, right, par);
+    return std::make_shared<node>(val, left, right, par);
   }
   //
 private:
@@ -199,7 +197,7 @@ public:
                             std::move(lambda));
       } else if ( node < root->m_data) {
           return lambda(std::move(node), root->m_left,
-                      std::move(lambda));
+                      lambda);
       } else return root;
       return end();
     };
@@ -224,7 +222,7 @@ public:
                             std::move(lambda));
       } else if ( node < root->m_data) {
           return lambda(std::move(node), root->m_left,
-                      std::move(lambda));
+                      lambda);
       } else return root;
       return end();
     };
@@ -249,7 +247,7 @@ public:
                             std::move(lambda));
       } else if ( node < root->m_data) {
           return lambda(node, root->m_left,
-                      std::move(lambda));
+                      lambda);
       } else return root;
       return end();
     };
@@ -274,7 +272,7 @@ public:
                             std::move(lambda));
       } else if ( node < root->m_data) {
           return lambda(node, root->m_left,
-                      std::move(lambda));
+                      lambda);
       } else return root;
       return end();
     };
@@ -372,7 +370,7 @@ public:
       } else if (val > root->m_data) {
         lambda(std::move(val), root->m_right, root, std::move(lambda));
       } else if (val < root->m_data) {
-        lambda(std::move(val), root->m_left, root, std::move(lambda));
+        lambda(std::move(val), root->m_left, root, lambda);
       } else;
     };
     insert_hidden(std::move(val), m_root, nullptr,
@@ -398,7 +396,7 @@ public:
       } else if (val > root->m_data) {
         lambda(val, root->m_right, root, std::move(lambda));
       } else if (val < root->m_data) {
-        lambda(val, root->m_left, root, std::move(lambda));
+        lambda(val, root->m_left, root, lambda);
       } else;
     };
     insert_hidden(val, m_root, nullptr, std::move(insert_hidden));
@@ -430,14 +428,14 @@ public:
       if ( order == 1 && root != nullptr ) {
         std::cout << root->m_data << ' ';
         lambda(root->m_left, order, std::move(lambda));
-        lambda(root->m_right, order, std::move(lambda));
+        lambda(root->m_right, order, lambda);
       } else if ( order == 2 && root != nullptr ) {
         lambda(root->m_left, order, std::move(lambda));
         std::cout << root->m_data << ' ';
-        lambda(root->m_right, order, std::move(lambda));
+        lambda(root->m_right, order, lambda);
       } else if ( order == 3 && root != nullptr ) {
         lambda(root->m_left, order, std::move(lambda));
-        lambda(root->m_right, order, std::move(lambda));
+        lambda(root->m_right, order, lambda);
         std::cout << root->m_data << ' ';
       }
     };
@@ -470,7 +468,7 @@ public:
       else if (val > root->m_data) {
         return lambda(std::move(val), root->m_right, std::move(lambda));
       } else if (val < root->m_data) {
-        return lambda(std::move(val), root->m_left, std::move(lambda));
+        return lambda(std::move(val), root->m_left, lambda);
       } else return true; // found
       return false;
     };
@@ -504,7 +502,7 @@ public:
       else if (val > root->m_data) {
         return lambda(val, root->m_right, std::move(lambda));
       } else if (val < root->m_data) {
-        return lambda(val, root->m_left, std::move(lambda));
+        return lambda(val, root->m_left, lambda);
       } else return true; // found
       return false;
     };
@@ -577,12 +575,12 @@ public:
       else if ( val > root->m_data ) {
         lambda(std::move(val), root->m_right, std::move(lambda));
       } else if ( val < root->m_data ) {
-        lambda(std::move(val), root->m_left, std::move(lambda));
+        lambda(std::move(val), root->m_left, lambda);
       } else if ( root->m_right != nullptr
                       && root->m_left != nullptr)
       { // Has two children
         root->m_data = min(root->m_right)->m_data;
-        lambda(std::move(root->m_data), root->m_right, std::move(lambda));
+        lambda(std::move(root->m_data), root->m_right, lambda);
       } else {
         sh_ptr old_node = root;
         root = (root->m_left != nullptr)
@@ -612,7 +610,7 @@ public:
       else if ( val > root->m_data ) {
         lambda(val, root->m_right, std::move(lambda));
       } else if ( val < root->m_data ) {
-        lambda(val, root->m_left, std::move(lambda));
+        lambda(val, root->m_left, lambda);
       } else if ( root->m_right != nullptr
                       && root->m_left != nullptr)
       { // Has two children
@@ -633,7 +631,10 @@ public:
   auto depth(Ty &&node) const
       -> std::size_t
   {
-    if ( is_empty() ) {get_apology( Apology::empty ); return 0ull;}
+    if ( is_empty() ) {
+      get_apology( Apology::empty );
+      return 0ull;
+    }
     //
     constexpr
     auto depth_hidden = [](const sh_ptr &root, Ty &&node,
@@ -645,7 +646,7 @@ public:
       else if  ( root->m_data == node ) { return height; }
       return static_cast<std::size_t>(std::max(
         lambda(root->m_left, std::move(node), height+1ull, std::move(lambda)),
-        lambda(root->m_right, std::move(node), height+1ull, std::move(lambda))
+        lambda(root->m_right, std::move(node), height+1ull, lambda)
       ));
     };
   //
@@ -678,7 +679,7 @@ public:
       else if  ( root->m_data == node ) { return height; }
       return static_cast<std::size_t> (std::max(
         lambda(root->m_left, node, height+1ull, std::move(lambda)),
-        lambda(root->m_right, node, height+1ull, std::move(lambda))
+        lambda(root->m_right, node, height+1ull, lambda)
       ));
     };
   //
@@ -717,6 +718,7 @@ private:
     return min(root->m_left);
   }
 
+private:
   constexpr
   auto destroy_tree() // FIXME: causes leaks in normal calls
     -> void
@@ -730,7 +732,9 @@ private:
     {
       if ( root ) {
         lambda(root->m_left, std::move(lambda));
-        lambda(root->m_right, std::move(lambda));
+        lambda(root->m_right, lambda);
+        root->m_left.reset();
+        root->m_right.reset();
         root->m_data = {};
         root.reset();
       }
