@@ -27,50 +27,34 @@ class bst_
     Ty m_data{};
     sh_ptr m_left{};
     sh_ptr m_right{};
-    sh_ptr m_parent{}; // to hold parent of each node
+    node * m_parent{}; // to hold parent of each node
     //
     explicit constexpr
     node(const Ty& val, const sh_ptr& left,
                               const sh_ptr& right,
-                                const sh_ptr & parent)
+                               node *parent)
                                     noexcept
-        : m_data(val), m_left(left), m_right(right), m_parent(parent) {}
+        : m_data(val), m_left(left), m_right(right), m_parent(parent) {
+        }
     //
     explicit constexpr
-    node(Ty&& val, sh_ptr&& left, sh_ptr&& right, sh_ptr &&parent)
+    node(Ty&& val, sh_ptr&& left, sh_ptr&& right, node *parent)
                                       noexcept
-        : m_data(val), m_left(left), m_right(right), m_parent(parent)  {}
-
-    ~node() {
-      dest(m_parent);
-    }
-  private:
-    constexpr
-    void dest(sh_ptr &parent) {
-      if ( !m_parent ) { return; }
-      if ( parent ) {
-        dest(parent->m_left);
-        dest(parent->m_right);
-        parent->m_left.reset();
-        parent->m_right.reset();
-        parent.reset();
-      }
-      m_data = {};
-      parent = nullptr;
-    }
+        : m_data(val), m_left(left), m_right(right), m_parent(parent)  {
+        }
   };
 private:
   using sh_ptr = std::shared_ptr<node>;
   // allocators
   constexpr
   auto allocate(const Ty& val, const sh_ptr& left,
-                    const sh_ptr& right, const sh_ptr& par)
+                    const sh_ptr& right, node * par)
       -> sh_ptr
   {
     return std::make_shared<node>(val, left, right, par);
   }
   constexpr
-  auto allocate(Ty &&val, sh_ptr &&left, sh_ptr &&right, sh_ptr && par)
+  auto allocate(Ty &&val, sh_ptr &&left, sh_ptr &&right, node * par)
       -> sh_ptr
   {
     return std::make_shared<node>(val, left, right, par);
@@ -84,19 +68,22 @@ private:
 public:
   class bst_itr {
   private:
-  friend class bst_<Ty>;
-    sh_ptr root_itr{};
+    friend class bst_<Ty>;
+    node * root_itr{};
     bst_<Ty> *tree{};
-    bst_itr(const sh_ptr& ptr, const bst_<Ty> *tree_ptr)
+    bst_itr(const node *& ptr, const bst_<Ty> *tree_ptr)
       : root_itr(ptr), tree(tree_ptr)
       {}
   //
   public:
     constexpr bst_itr() : root_itr(nullptr) {}
-    constexpr bst_itr(const sh_ptr &copy) : root_itr(copy) {}
-    constexpr bst_itr(sh_ptr &&move) : root_itr(move) {}
+    constexpr bst_itr(const node *&copy) : root_itr(copy) {}
+    constexpr bst_itr(node *&&move) : root_itr(move) {}
+    constexpr bst_itr(const sh_ptr &copy) : root_itr(copy.get()) {}
+    constexpr bst_itr(sh_ptr &&move) : root_itr(move.get()) {}
     constexpr bst_itr(std::nullptr_t &&move ) : root_itr(move) {}
     constexpr bst_itr(const std::nullptr_t &copy ) : root_itr(copy) {}
+
     // foo++
     constexpr bst_itr operator++(int) {
       // TODO
@@ -105,22 +92,22 @@ public:
     // ++foo // in-order
     // many thanks to: https://www.cs.odu.edu/~zeil/cs361/latest/Public/treetraversal
     constexpr bst_itr operator++() {
-      sh_ptr temp{};
+      node * temp{};
       if (root_itr == nullptr) {
         // ++ from end(). get the root of the tree
-        root_itr = tree->m_root;
+        root_itr = tree->m_root.get();
         // error! ++ requested for an empty tree
         if (root_itr == nullptr) { get_apology(Apology::not_found); }
         // move to the smallest value in the tree,
         // which is the first node in order
         while (root_itr->m_left != nullptr) {
-                root_itr = root_itr->m_left;
+                root_itr = root_itr->m_left.get();
         }
       } else if (root_itr->m_right != nullptr) {
         // successor is the farthest left node of right subtree
-        root_itr = root_itr->m_right;
+        root_itr = root_itr->m_right.get();
         while (root_itr->m_left != nullptr) {
-          root_itr = root_itr->m_left;
+          root_itr = root_itr->m_left.get();
         }
       } else {
         // have already processed the left subtree, and
@@ -131,7 +118,7 @@ public:
         // was the last node in order, and its successor
         // is the end of the list
         temp = root_itr->m_parent;
-        while (temp != nullptr && root_itr == temp->m_right) {
+        while (temp != nullptr && root_itr == temp->m_right.get()) {
           root_itr = temp;
           temp = temp->m_parent;
         }
@@ -184,7 +171,7 @@ public:
   constexpr auto find(Ty &&node) const
       -> const const_itr
   {
-    if ( is_empty() ) {
+    if ( empty() ) {
       return end();
     }
     auto find_hidden = [this] (Ty &&node, const sh_ptr& root,
@@ -209,7 +196,7 @@ public:
   constexpr auto find(Ty &&node)
       -> iterator
   {
-    if ( is_empty() ) {
+    if ( empty() ) {
       return end();
     }
     auto find_hidden = [this] (Ty &&node, const sh_ptr& root,
@@ -234,7 +221,7 @@ public:
   constexpr auto find(const Ty &node) const
       -> const const_itr
   {
-    if ( is_empty() ) {
+    if ( empty() ) {
       return end();
     }
     auto find_hidden = [this] (const Ty &node, const sh_ptr& root,
@@ -259,7 +246,7 @@ public:
   constexpr auto find(const Ty &node)
       -> iterator
   {
-    if ( is_empty() ) {
+    if ( empty() ) {
       return end();
     }
     auto find_hidden = [this] (const Ty &node, const sh_ptr& root,
@@ -283,7 +270,7 @@ public:
   [[nodiscard]]
   constexpr auto begin() const noexcept
     -> const_itr {
-      if ( is_empty() ) {
+      if ( empty() ) {
         get_apology(Apology::empty);
         return end();
       }
@@ -292,7 +279,7 @@ public:
    [[nodiscard]]
   constexpr auto begin() noexcept
     -> iterator {
-      if ( is_empty() ) {
+      if ( empty() ) {
         get_apology(Apology::empty);
         return end();
       }
@@ -334,7 +321,7 @@ public:
    */
   [[nodiscard]]
   constexpr
-  auto is_empty() const
+  auto empty() const
       -> bool
   {
     return m_root == nullptr;
@@ -361,16 +348,16 @@ public:
   {
     ++m_size;
     auto insert_hidden = [this]
-                (Ty &&val, sh_ptr &root, const sh_ptr &par, auto&& lambda)
+                (Ty &&val, sh_ptr &root, const node * par, auto&& lambda)
         -> void
     {
       if ( !root ) {
         root = allocate(std::move(val), std::move(nullptr),
-                                          std::move(nullptr), std::move(par));
+                                          std::move(nullptr), par);
       } else if (val > root->m_data) {
-        lambda(std::move(val), root->m_right, root, std::move(lambda));
+        lambda(std::move(val), root->m_right, root.get(), std::move(lambda));
       } else if (val < root->m_data) {
-        lambda(std::move(val), root->m_left, root, lambda);
+        lambda(std::move(val), root->m_left, root.get(), lambda);
       } else;
     };
     insert_hidden(std::move(val), m_root, nullptr,
@@ -388,15 +375,15 @@ public:
     ++m_size;
     auto insert_hidden = [this]
                         (const Ty &val,
-                          sh_ptr &root, const sh_ptr &par, auto&& lambda)
+                          sh_ptr &root, node * par, auto&& lambda)
         -> void
     {
       if ( !root ) { // root == nullptr
         root = allocate(val, nullptr, nullptr, par);
       } else if (val > root->m_data) {
-        lambda(val, root->m_right, root, std::move(lambda));
+        lambda(val, root->m_right, root.get(), std::move(lambda));
       } else if (val < root->m_data) {
-        lambda(val, root->m_left, root, lambda);
+        lambda(val, root->m_left, root.get(), lambda);
       } else;
     };
     insert_hidden(val, m_root, nullptr, std::move(insert_hidden));
@@ -412,7 +399,7 @@ public:
   auto print(const int order) const
       -> void
   {
-    if ( is_empty() ) {
+    if ( empty() ) {
       get_apology( Apology::empty );
       return;
     }
@@ -453,7 +440,7 @@ public:
   auto contains(Ty &&val) const
     -> bool
   {
-    if ( is_empty() ) {
+    if ( empty() ) {
       get_apology( Apology::empty );
       return false;
     }
@@ -487,7 +474,7 @@ public:
   auto contains(const Ty &val) const
     -> bool
   {
-    if ( is_empty() ) {
+    if ( empty() ) {
       get_apology( Apology::empty );
       return false;
     }
@@ -518,7 +505,7 @@ public:
   auto max() const
       -> Ty
   {
-    if ( is_empty() ) {
+    if ( empty() ) {
       get_apology( Apology::empty );
       return _failed_;
     }
@@ -544,7 +531,7 @@ public:
   auto min()
       -> Ty
   {
-    if ( is_empty() ) {
+    if ( empty() ) {
       get_apology( Apology::empty );
       return _failed_;
     }
@@ -560,7 +547,7 @@ public:
   auto remove(Ty &&val)
 	  -> void
   {
-    if ( is_empty() ) {
+    if ( empty() ) {
       get_apology( Apology::empty );
       return;
     }
@@ -595,7 +582,7 @@ public:
   auto remove(const Ty &val)
 	  -> void
   {
-    if ( is_empty() ) {
+    if ( empty() ) {
       get_apology( Apology::empty );
       return;
     }
@@ -631,7 +618,7 @@ public:
   auto depth(Ty &&node) const
       -> std::size_t
   {
-    if ( is_empty() ) {
+    if ( empty() ) {
       get_apology( Apology::empty );
       return 0ull;
     }
@@ -663,7 +650,7 @@ public:
   auto depth(const Ty &node) const
       -> std::size_t
   {
-    if ( is_empty() ) {
+    if ( empty() ) {
       get_apology( Apology::empty );
       return 0ull;
     }
@@ -690,7 +677,7 @@ public:
   auto get_parent(Ty &&val) const
     -> iterator
   {
-    if ( is_empty() ) {
+    if ( empty() ) {
       get_apology( Apology::empty );
       return end();
     }
@@ -701,12 +688,25 @@ public:
     // return iterator to val
     const auto val_itr = find(val);
     // return iterator to val's parent
-    return iterator( val_itr.root_itr->m_parent );
+    return iterator( std::move(val_itr.root_itr->m_parent) );
   }
-//
-  ~bst_() {
-    destroy_tree();
+
+  /**
+   * @brief makes the tree empty
+   * @brief make sure to not use it twice without some safety chekcs
+   * @brief make sure to not use any other stuff related to the burned tree after calling this
+   */
+  constexpr
+  auto burn_tree()
+    -> void
+  {
+    if ( empty() ) {
+      get_apology( Apology::empty );
+      return;
+    }
+    m_root.reset();
   }
+
 //
 private:
   constexpr
@@ -716,33 +716,6 @@ private:
     if ( !root ) { return nullptr; }
     if ( !root->m_left ) { return root; }
     return min(root->m_left);
-  }
-
-private:
-  constexpr
-  auto destroy_tree() // FIXME: causes leaks in normal calls
-    -> void
-  {
-    if ( is_empty() ) {
-      get_apology( Apology::empty );
-      return;
-    }
-    auto destroy_hidden = [this] (sh_ptr &root, auto &&lambda)
-      -> void
-    {
-      if ( root ) {
-        lambda(root->m_left, std::move(lambda));
-        lambda(root->m_right, lambda);
-        root->m_left.reset();
-        root->m_right.reset();
-        root->m_data = {};
-        root.reset();
-      }
-      root = nullptr;
-      m_size = {};
-      return;
-    };
-    destroy_hidden(m_root, std::move(destroy_hidden));
   }
 
 // operators
