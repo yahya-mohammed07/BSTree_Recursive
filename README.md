@@ -1,10 +1,10 @@
-# Binary-search tree
+# Binary-search tree V2.0.1
 
 ==============
 
 ## Introduction
 
-- Binary-search tree data-structure written in c++ modern with `smart-pointers`
+- Binary-search tree data-structure written in c++ modern with `smart-raw pointers and iterators`
 
 ## Requirement
 
@@ -19,7 +19,9 @@
 
 ### Everything inside `bst.hpp`
 
-![Screenshot-20210713120223-567x266](https://user-images.githubusercontent.com/62993724/125424430-f933b0d1-32c8-4dd0-b023-e7c8840873b5.png)
+![image](https://user-images.githubusercontent.com/62993724/130318791-18abc0c2-0e1c-46eb-90d0-57de1792f549.png)
+
+- including: min() and size()
 
 ## Usage
 
