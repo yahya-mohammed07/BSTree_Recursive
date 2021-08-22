@@ -89,7 +89,7 @@ public:
         // ++ from end(). get the root of the tree
         root_itr = tree->m_root.get();
         // error! ++ requested for an empty tree
-        if (root_itr == nullptr) { get_apology(Apology::not_found); }
+        if (root_itr == nullptr) { show(Apology::not_found); }
         // move to the smallest value in the tree,
         // which is the first node in order
         while (root_itr->m_left != nullptr) {
@@ -129,7 +129,7 @@ public:
         // ++ from end(). get the root of the tree
         root_itr = tree->m_root.get();
         // error! ++ requested for an empty tree
-        if (root_itr == nullptr) { get_apology(Apology::not_found); }
+        if (root_itr == nullptr) { show(Apology::not_found); }
         // move to the smallest value in the tree,
         // which is the first node in order
         while (root_itr->m_left != nullptr) {
@@ -300,7 +300,7 @@ public:
   constexpr auto begin() const noexcept
     -> const_itr {
       if ( empty() ) {
-        get_apology(Apology::empty);
+        show(Apology::empty);
         return end();
       }
       return const_itr( min(m_root) );
@@ -309,7 +309,7 @@ public:
   constexpr auto begin() noexcept
     -> iterator {
       if ( empty() ) {
-        get_apology(Apology::empty);
+        show(Apology::empty);
         return end();
       }
       return iterator( min(m_root) );
@@ -429,11 +429,11 @@ public:
       -> void
   {
     if ( empty() ) {
-      get_apology( Apology::empty );
+      show( Apology::empty );
       return;
     }
     //
-    if ( order < 0 || order > 3) { get_apology( Apology::invalid_order ); }
+    if ( order < 0 || order > 3) { show( Apology::invalid_order ); }
     constexpr
     auto print_hidden = []
                         (const sh_ptr &root,
@@ -470,7 +470,7 @@ public:
     -> bool
   {
     if ( empty() ) {
-      get_apology( Apology::empty );
+      show( Apology::empty );
       return false;
     }
     //
@@ -504,7 +504,7 @@ public:
     -> bool
   {
     if ( empty() ) {
-      get_apology( Apology::empty );
+      show( Apology::empty );
       return false;
     }
     //
@@ -535,7 +535,7 @@ public:
       -> Ty
   {
     if ( empty() ) {
-      get_apology( Apology::empty );
+      show( Apology::empty );
       return _failed_;
     }
     //
@@ -561,7 +561,7 @@ public:
       -> Ty
   {
     if ( empty() ) {
-      get_apology( Apology::empty );
+      show( Apology::empty );
       return _failed_;
     }
     //
@@ -577,7 +577,7 @@ public:
 	  -> void
   {
     if ( empty() ) {
-      get_apology( Apology::empty );
+      show( Apology::empty );
       return;
     }
     //
@@ -613,7 +613,7 @@ public:
 	  -> void
   {
     if ( empty() ) {
-      get_apology( Apology::empty );
+      show( Apology::empty );
       return;
     }
     //
@@ -649,7 +649,7 @@ public:
       -> std::size_t
   {
     if ( empty() ) {
-      get_apology( Apology::empty );
+      show( Apology::empty );
       return 0ull;
     }
     //
@@ -681,7 +681,7 @@ public:
       -> std::size_t
   {
     if ( empty() ) {
-      get_apology( Apology::empty );
+      show( Apology::empty );
       return 0ull;
     }
     //
@@ -708,11 +708,11 @@ public:
     -> iterator
   {
     if ( empty() ) {
-      get_apology( Apology::empty );
+      show( Apology::empty );
       return end();
     }
     if (find(val) == end() || val == m_root->m_data ) {
-      get_apology( Apology::invalid_node );
+      show( Apology::invalid_node );
       return end();
     }
     // return iterator to val
@@ -731,7 +731,7 @@ public:
     -> void
   {
     if ( empty() ) {
-      get_apology( Apology::empty );
+      show( Apology::empty );
       return;
     }
     m_root.reset();
