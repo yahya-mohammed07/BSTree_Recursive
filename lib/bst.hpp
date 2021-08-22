@@ -1,7 +1,6 @@
 /**
  * @file bst.hpp
  * @author yahya mohammed (goldroger.1993@outlook.com)
- * @version 2.0.1
  * @date 2021-07-7 (date started)
  */
 
@@ -11,7 +10,6 @@
 // includes
 
 #include <memory>
-#include <functional>
 #include <initializer_list>
 #include <stack>
 #include "apology.hpp"
@@ -34,14 +32,14 @@ class bst_
                               const sh_ptr& right,
                                node *parent)
                                     noexcept
-        : m_data(val), m_left(left), m_right(right), m_parent(parent) {
-        }
+        : m_data(val), m_left(left), m_right(right), m_parent(parent)
+        {}
     //
     explicit constexpr
     node(Ty&& val, sh_ptr&& left, sh_ptr&& right, node *parent)
                                       noexcept
-        : m_data(val), m_left(left), m_right(right), m_parent(parent)  {
-        }
+        : m_data(val), m_left(left), m_right(right), m_parent(parent)
+        {}
   };
 private:
   using sh_ptr = std::shared_ptr<node>;
@@ -84,9 +82,43 @@ public:
     constexpr bst_itr(std::nullptr_t &&move ) : root_itr(move) {}
     constexpr bst_itr(const std::nullptr_t &copy ) : root_itr(copy) {}
 
-    // foo++
+    // foo++ in-order
     constexpr bst_itr operator++(int) {
-      // TODO
+      node * temp{};
+      if (root_itr == nullptr) {
+        // ++ from end(). get the root of the tree
+        root_itr = tree->m_root.get();
+        // error! ++ requested for an empty tree
+        if (root_itr == nullptr) { get_apology(Apology::not_found); }
+        // move to the smallest value in the tree,
+        // which is the first node in order
+        while (root_itr->m_left != nullptr) {
+                root_itr = root_itr->m_left.get();
+        }
+      } else if (root_itr->m_right != nullptr) {
+        // successor is the farthest left node of right subtree
+        root_itr = root_itr->m_right.get();
+        while (root_itr->m_left != nullptr) {
+          root_itr = root_itr->m_left.get();
+        }
+      } else {
+        // have already processed the left subtree, and
+        // there is no right subtree. move up the tree,
+        // looking for a parent for which nodePtr is a left child,
+        // stopping if the parent becomes NULL. a non-NULL parent
+        // is the successor. if parent is NULL, the original node
+        // was the last node in order, and its successor
+        // is the end of the list
+        temp = root_itr->m_parent;
+        while (temp != nullptr && root_itr == temp->m_right.get()) {
+          root_itr = temp;
+          temp = temp->m_parent;
+        }
+        // if we were previously at the right-most node in
+        // the tree, nodePtr = nullptr, and the iterator specifies
+        // the end of the list
+        root_itr = temp;
+      }
       return *this;
     }
     // ++foo // in-order
@@ -178,7 +210,7 @@ public:
                                     auto && lambda)
         -> const const_itr
     {
-      if ( !root ) return end();
+      if ( !root ) return end(); // not found
       if ( node > root->m_data ) {
         return lambda(std::move(node), root->m_right,
                             std::move(lambda));
@@ -203,7 +235,7 @@ public:
                                     auto && lambda)
         -> iterator
     {
-      if ( !root ) return end();
+      if ( !root ) return end(); // not found
       if ( node > root->m_data ) {
         return lambda(std::move(node), root->m_right,
                             std::move(lambda));
@@ -211,7 +243,6 @@ public:
           return lambda(std::move(node), root->m_left,
                       lambda);
       } else return root;
-      return end();
     };
     return find_hidden(std::move(node), m_root,
                             std::move(find_hidden));
@@ -228,7 +259,7 @@ public:
                                     auto && lambda)
         -> const const_itr
     {
-      if ( !root ) return end();
+      if ( !root ) return end(); // not found
       if ( node > root->m_data ) {
         return lambda(node, root->m_right,
                             std::move(lambda));
@@ -236,7 +267,6 @@ public:
           return lambda(node, root->m_left,
                       lambda);
       } else return root;
-      return end();
     };
     return find_hidden(node, m_root,
                             std::move(find_hidden));
@@ -253,7 +283,7 @@ public:
                                     auto && lambda)
         -> iterator
     {
-      if ( !root ) return end();
+      if ( !root ) return end(); // not found
       if ( node > root->m_data ) {
         return lambda(node, root->m_right,
                             std::move(lambda));
@@ -261,7 +291,6 @@ public:
           return lambda(node, root->m_left,
                       lambda);
       } else return root;
-      return end();
     };
     return find_hidden(node, m_root,
                             std::move(find_hidden));
@@ -339,7 +368,7 @@ public:
   }
 
   /**
-   * @brief insert an element to BSTree also supplie `m_parent`
+   * @brief insert an element to BSTree also supply `parent`
    * @param val
    */
   constexpr
@@ -365,7 +394,7 @@ public:
   }
 
   /**
-   * @brief insert an element to BSTree
+   * @brief insert an element to BSTree also supply `parent`
    * @param val
    */
   constexpr
@@ -566,9 +595,10 @@ public:
       } else if ( root->m_right != nullptr
                       && root->m_left != nullptr)
       { // Has two children
+        // get the min of right sub-tree
         root->m_data = min(root->m_right)->m_data;
         lambda(std::move(root->m_data), root->m_right, lambda);
-      } else {
+      } else { // Node has one leaf
         sh_ptr old_node = root;
         root = (root->m_left != nullptr)
                         ?  root->m_left : root->m_right;
