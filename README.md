@@ -1,4 +1,4 @@
-# Binary-search tree V2.0.1
+# Binary-search tree v0.0.2
 
 ==============
 
@@ -17,6 +17,8 @@
     - clang++-11 -std=c++1z
     - clang++-10 -std=c++1z
 
+- Catch2 for testing
+
 ### Everything inside `bst.hpp`
 
 ![image](https://user-images.githubusercontent.com/62993724/130318791-18abc0c2-0e1c-46eb-90d0-57de1792f549.png)
@@ -30,7 +32,7 @@
 - if you're on ubuntu you can do this:
 
   - open terminal then do `sudo apt install nautilus-admin` then when it's done do `nautilus -q`
-  - open `usr/include` folder as administrator
+  - open `usr/include` folder as administrator ( as root if you're using `nemo` )
   - add `lib` folder into `usr/include`, you may rename library into `bst` after you're done!, this is how you include it without copying it every time into your directory!
 
   - ```cpp
