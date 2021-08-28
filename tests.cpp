@@ -42,6 +42,7 @@ TEST_CASE("operator()++ & operator(int)++") {
 }
 
 TEST_CASE("make empty") {
+  REQUIRE(nums.empty() == false);
   nums.burn_tree();
   REQUIRE(nums.empty() == true);
 }
