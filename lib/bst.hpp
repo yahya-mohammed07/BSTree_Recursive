@@ -40,7 +40,8 @@ class bst_
                                       noexcept
         : m_data(val), m_left(left), m_right(right), m_parent(parent)
         {}
-  };
+  }; // end of struct node
+
 private:
   using sh_ptr = std::shared_ptr<node>;
   // allocators
@@ -180,8 +181,8 @@ public:
 //
 public:
 //
-  using const_itr = bst_itr;
-  using iterator  = const_itr;
+  using const_iterator = bst_itr;
+  using iterator  = const_iterator;
 
   constexpr bst_() noexcept : m_root{nullptr} {};
 
@@ -198,17 +199,22 @@ public:
     rhs.m_size = 0;
   }
 
-//
+  /**
+   * @brief returns an iterator to the node if found, end() if not
+   *
+   * @param node you are looking for
+   * @return const const_iterator
+   */
   [[nodiscard]]
   constexpr auto find(Ty &&node) const
-      -> const const_itr
+      -> const const_iterator
   {
     if ( empty() ) {
       return end();
     }
     auto find_hidden = [this] (Ty &&node, const sh_ptr& root,
                                     auto && lambda)
-        -> const const_itr
+        -> const const_iterator
     {
       if ( !root ) return end(); // not found
       if ( node > root->m_data ) {
@@ -224,6 +230,12 @@ public:
                             std::move(find_hidden));
   }
 
+  /**
+   * @brief returns an iterator to the node if found, end() if not
+   *
+   * @param node you are looking for
+   * @return iterator
+   */
   [[nodiscard]]
   constexpr auto find(Ty &&node)
       -> iterator
@@ -247,17 +259,23 @@ public:
     return find_hidden(std::move(node), m_root,
                             std::move(find_hidden));
   }
-//
+
+  /**
+   * @brief returns an iterator to the node if found, end() if not
+   *
+   * @param node you are looking for
+   * @return const const_iterator
+   */
   [[nodiscard]]
   constexpr auto find(const Ty &node) const
-      -> const const_itr
+      -> const const_iterator
   {
     if ( empty() ) {
       return end();
     }
     auto find_hidden = [this] (const Ty &node, const sh_ptr& root,
                                     auto && lambda)
-        -> const const_itr
+        -> const const_iterator
     {
       if ( !root ) return end(); // not found
       if ( node > root->m_data ) {
@@ -272,6 +290,12 @@ public:
                             std::move(find_hidden));
   }
 
+  /**
+   * @brief returns an iterator to the node if found, end() if not
+   *
+   * @param node you are looking for
+   * @return iterator
+   */
   [[nodiscard]]
   constexpr auto find(const Ty &node)
       -> iterator
@@ -295,29 +319,43 @@ public:
     return find_hidden(node, m_root,
                             std::move(find_hidden));
   }
-//
+
+  /**
+   * @brief returns an iterator to the left-most node if tree is constructed, end() if not
+   *
+   * @return const_iterator
+   */
   [[nodiscard]]
   constexpr auto begin() const noexcept
-    -> const_itr {
+    -> const_iterator {
       if ( empty() ) {
-        show(Apology::empty);
         return end();
       }
-      return const_itr( min(m_root) );
+      return const_iterator( min(m_root) );
     }
-   [[nodiscard]]
+
+  /**
+   * @brief returns an iterator to the left-most node if tree is constructed, end() if not
+   *
+   * @return iterator
+   */
+  [[nodiscard]]
   constexpr auto begin() noexcept
     -> iterator {
       if ( empty() ) {
-        show(Apology::empty);
         return end();
       }
       return iterator( min(m_root) );
     }
 
+  /**
+   * @brief returns `nullptr`
+   *
+   * @return const_iterator
+   */
   [[nodiscard]]
   constexpr auto end() const noexcept
-    -> const_itr { return const_itr(nullptr); }
+    -> const_iterator { return const_iterator(nullptr); }
 //
 
 ///variadic inserting
@@ -527,7 +565,7 @@ public:
 
   /**
    * @brief get maximum element in BSTree
-   * @return const Ty&
+   * @return Ty
    */
   [[nodiscard]]
   constexpr
@@ -553,7 +591,7 @@ public:
   }
   /**
    * @brief get minimum element in BSTree
-   * @return const Ty&
+   * @return const Ty
    */
   [[nodiscard]]
   constexpr
@@ -570,7 +608,7 @@ public:
 
   /**
    * @brief remove a node from the BSTree
-   * @param val to be removes
+   * @param val the node to be removed
    */
   constexpr
   auto remove(Ty &&val)
@@ -608,6 +646,10 @@ public:
     remove_hidden(std::move(val), m_root, std::move(remove_hidden));
   }
 
+  /**
+   * @brief remove a node from the BSTree
+   * @param val the node to be removed
+   */
   constexpr
   auto remove(const Ty &val)
 	  -> void
@@ -643,7 +685,11 @@ public:
     remove_hidden(val, m_root, std::move(remove_hidden));
   }
 
-  //
+  /**
+   * @brief get the height/depth of given node number in the BSTree
+   * @param node node number
+   * @return std::size_t
+   */
   constexpr
   auto depth(Ty &&node) const
       -> std::size_t
@@ -672,7 +718,7 @@ public:
   }
 
   /**
-   * @brief get the height of given node number in the BSTree
+   * @brief get the height/depth of given node number in the BSTree
    * @param node node number
    * @return std::size_t
    */
@@ -702,10 +748,16 @@ public:
   //
     return depth_hidden(m_root, node, 0ull, std::move(depth_hidden));
   }
-//
+
+
+  /**
+   * @brief Get an iterator to the parent of node if exits, end() if not
+   * @param val the node you want it's parent
+   * @return const_iterator
+   */
   [[nodiscard]] constexpr
   auto get_parent(Ty &&val) const
-    -> iterator
+    -> const_iterator
   {
     if ( empty() ) {
       show( Apology::empty );
@@ -718,7 +770,30 @@ public:
     // return iterator to val
     const auto val_itr = find(val);
     // return iterator to val's parent
-    return iterator( std::move(val_itr.root_itr->m_parent) );
+    return const_iterator( std::move(val_itr.root_itr->m_parent) );
+  }
+
+ /**
+   * @brief Get an iterator to the parent of node if exits, end() if not
+   * @param val the node you want it's parent
+   * @return const_iterator
+   */
+  [[nodiscard]] constexpr
+  auto get_parent(const Ty &val) const
+    -> const_iterator
+  {
+    if ( empty() ) {
+      show( Apology::empty );
+      return end();
+    }
+    if (find(val) == end() || val == m_root->m_data ) {
+      show( Apology::invalid_node );
+      return end();
+    }
+    // return iterator to val
+    const auto val_itr = find(val);
+    // return iterator to val's parent
+    return const_iterator( std::move(val_itr.root_itr->m_parent) );
   }
 
   /**
@@ -739,6 +814,7 @@ public:
 
 //
 private:
+  // hidden function
   constexpr
   auto min (const sh_ptr &root)
         -> sh_ptr
@@ -748,7 +824,7 @@ private:
     return min(root->m_left);
   }
 
-// operators
+// operators on tree
 public:
 
   constexpr bst_<Ty>& operator=(const bst_<Ty> &rhs) noexcept {
