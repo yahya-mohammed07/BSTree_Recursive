@@ -1,10 +1,10 @@
-# Binary-search tree v0.0.2
+# Binary-search tree v0.2.8
 
 ==============
 
 ## Introduction
 
-- Binary-search tree data-structure written in c++ modern with `smart-raw pointers and iterators`
+- Binary-search tree data-structure written in c++ modern built with `smart-raw pointers and iterators`
 
 ## Requirement
 
@@ -27,9 +27,9 @@
 
 ## Usage
 
-- simply download this library then copy `lib` folder to your working directory then include it like this: `#include "lib/bst.hpp"`!
+- simply download this library then copy `lib` folder to your working directory and include it like this: `#include "lib/bst.hpp"`!
 
-- if you're on ubuntu you can do this:
+- if you're on ubuntu/pop_os you can do this:
 
   - open terminal then do `sudo apt install nautilus-admin` then when it's done do `nautilus -q`
   - open `usr/include` folder as administrator ( as root if you're using `nemo` )
