@@ -845,6 +845,13 @@ public:
     }
     return *this;
   }
+
+  // prints elements in-order
+  constexpr
+  friend std::ostream &operator<<( std::ostream &os, const bst_ &tree) {
+    tree.print(2);
+    return os;
+  }
 };
 
 #endif // BST_HPP
